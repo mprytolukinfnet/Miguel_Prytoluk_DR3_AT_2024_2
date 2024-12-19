@@ -20,6 +20,75 @@ def get_lineup(lineup):
     lineup = lineup[['player_name', 'position', 'position_id', 'jersey_number']].dropna().sort_values('position_id').drop('position_id', axis=1)
     return lineup
 
+def get_lineups(partida_id):
+    lineups = sb.lineups(partida_id)
+    for team in lineups.keys():
+        lineups[team] = get_lineup(lineups[team])
+    return lineups
+
+def get_descricao_partida(partida_selecionada):
+    descricao = f"{partida_selecionada.home_team} ({partida_selecionada.home_score}) x {partida_selecionada.away_team} ({partida_selecionada.away_score})\n"+\
+    f"**Competição:** {partida_selecionada.competition}\n"+\
+    f"**Temporada:** {partida_selecionada.season}\n"+\
+    f"**Data:** {partida_selecionada.match_date}\n"
+    return descricao
+
+def get_matches_dict():
+    competitions = sb.competitions()[['competition_id', 'season_id']]
+    # for each competion/season_id in competition, get its matches and store it to a dict in the format match_id: {competition_id, season_id}:
+    matches_dict = {}
+    for i, comp_row in competitions.iterrows():
+        competition_id = int(comp_row['competition_id'])
+        season_id = int(comp_row['season_id'])
+        matches = sb.matches(competition_id, season_id)
+        for j, match_row in matches.iterrows():
+            matches_dict[match_row['match_id']] = {'competition_id': competition_id, 'season_id': season_id}
+    return matches_dict
+
+def get_partida_selecionada(partida_id, matches_dict):
+    match_data = matches_dict[partida_id]
+    partidas_df = pd.DataFrame(sb.matches(match_data['competition_id'], match_data['season_id']))
+    partida_selecionada = partidas_df[partidas_df.match_id == partida_id].iloc[0]
+    return partida_selecionada
+
+def get_resumo_jogador(dados_jogador: pd.DataFrame):
+    """
+    Retorna estatísticas detalhadas de um jogador da partida.
+    Passe um DataFrame com os eventos do jogador para ter suas estatísticas retornadas.
+    """
+    def calcular_percentual(eventos, tipo, coluna_resultado, valor_sucesso):
+        """Calcula o percentual de sucesso para um tipo específico de evento."""
+        eventos_tipo = eventos[eventos['type'] == tipo]
+        contagem_resultados = eventos_tipo[coluna_resultado].value_counts(dropna=False)
+        if len(contagem_resultados) > 0:
+            return round(contagem_resultados.get(valor_sucesso, 0) / contagem_resultados.sum() * 100, 1)
+        return 0.0
+    
+    return {
+        "Gols": len(dados_jogador[dados_jogador['shot_outcome'] == "Goal"]),
+        "Assistências": len(dados_jogador[dados_jogador['pass_goal_assist'] == True]),
+        "Chutes": len(dados_jogador[dados_jogador['type'] == "Shot"]),
+        "Finalizações-Gol (%)": calcular_percentual(
+            dados_jogador, "Shot", "shot_outcome", "Goal"
+        ),
+        "Passes": len(dados_jogador[dados_jogador['type'] == "Pass"]),
+        "Passes-Sucesso (%)": calcular_percentual(
+            dados_jogador, "Pass", "pass_outcome", np.nan
+        ),
+        "Dribles": len(dados_jogador[dados_jogador['type'] == "Dribble"]),
+        "Dribles-Sucesso (%)": calcular_percentual(
+            dados_jogador, "Dribble", "dribble_outcome", "Complete"
+        ),
+        "Recepções": len(dados_jogador[dados_jogador['type'] == "Ball Receipt*"]),
+        "Recepções-Sucesso (%)": calcular_percentual(
+            dados_jogador, "Ball Receipt*", "ball_receipt_outcome", np.nan
+        ),
+        "Interceptações": len(dados_jogador[dados_jogador['type'] == "Interception"]),
+        "Interceptações-Sucesso (%)": calcular_percentual(
+            dados_jogador, "Interception", "interception_outcome", "Won"
+        ),
+    }
+
 @st.cache_data
 def load_competitions():
     """Carrega todas as competições disponíveis."""
@@ -79,15 +148,10 @@ def carregar_competicao_temporada_partida():
         # Carregar os dados da partida selecionada
         dados_partida = load_match_events(partida_id)
 
-        lineups = sb.lineups(partida_id)
-        home_team, away_team = partida_selecionada.home_team, partida_selecionada.away_team
-        lineups[home_team] = get_lineup(lineups[home_team])
-        lineups[away_team] = get_lineup(lineups[away_team])
+        lineups = get_lineups(partida_id)
 
-        descricao_partida = f"{home_team} ({partida_selecionada.home_score}) x {away_team} ({partida_selecionada.away_score})\n"+\
-        f"**Competição:** {state['competicao_nome']}\n"+\
-        f"**Temporada:** {state['temporada_ano']}\n"+\
-        f"**Data:** {partida_selecionada.match_date}\n"
+
+        descricao_partida = get_descricao_partida(partida_selecionada)
 
         progresso.progress(100)
 

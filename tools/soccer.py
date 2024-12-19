@@ -1,6 +1,6 @@
-from langchain.agents import Tool
 from langchain_core.tools import tool
 import numpy as np
+from data.loader import get_resumo_jogador
 
 def create_consultar_eventos(eventos):
     @tool
@@ -53,38 +53,8 @@ def create_resumo_jogador(eventos):
         Retorna estatísticas detalhadas de um jogador da partida.
         Passe o nome do jogadores para ter suas estatísticas retornadas.
         """
-        def calcular_percentual(eventos, tipo, coluna_resultado, valor_sucesso):
-            """Calcula o percentual de sucesso para um tipo específico de evento."""
-            eventos_tipo = eventos[eventos['type'] == tipo]
-            contagem_resultados = eventos_tipo[coluna_resultado].value_counts(dropna=False)
-            if len(contagem_resultados) > 0:
-                return round(contagem_resultados.get(valor_sucesso, 0) / contagem_resultados.sum() * 100, 1)
-            return 0.0
-        
         # Filtra os eventos do jogador
         dados_jogador = eventos[eventos['player'] == jogador]
-        
-        return {
-            "Chutes": len(dados_jogador[dados_jogador['type'] == "Shot"]),
-            "Finalizações-Gol (%)": calcular_percentual(
-                dados_jogador, "Shot", "shot_outcome", "Goal"
-            ),
-            "Passes": len(dados_jogador[dados_jogador['type'] == "Pass"]),
-            "Passes-Sucesso (%)": calcular_percentual(
-                dados_jogador, "Pass", "pass_outcome", np.nan
-            ),
-            "Dribles": len(dados_jogador[dados_jogador['type'] == "Dribble"]),
-            "Dribles-Sucesso (%)": calcular_percentual(
-                dados_jogador, "Dribble", "dribble_outcome", "Complete"
-            ),
-            "Recepções": len(dados_jogador[dados_jogador['type'] == "Ball Receipt*"]),
-            "Recepções-Sucesso (%)": calcular_percentual(
-                dados_jogador, "Ball Receipt*", "ball_receipt_outcome", np.nan
-            ),
-            "Interceptações": len(dados_jogador[dados_jogador['type'] == "Interception"]),
-            "Interceptações-Sucesso (%)": calcular_percentual(
-                dados_jogador, "Interception", "interception_outcome", "Won"
-            ),
-        }
+        return get_resumo_jogador(dados_jogador)
 
     return resumo_jogador
