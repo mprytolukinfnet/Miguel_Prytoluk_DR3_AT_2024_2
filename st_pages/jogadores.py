@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mplsoccer import Pitch, PyPizza
 import seaborn as sns
 import numpy as np
+from data.loader import get_resumo_jogador
 
 state = st.session_state
 
@@ -307,6 +308,9 @@ for i, jogador_col in enumerate(jogadores_cols):
     with jogador_col:
         progresso = st.progress(0)
         with st.spinner("Carregando visualizações..."):
+            # Dados jogador
+            st.dataframe(get_resumo_jogador(dados_partida_list[i]), height=458, column_config={"value": "nº"})
+
             # Mapa de Passes
             mapa_de_passes(dados_partida_list[i])
             progresso.progress(20)
