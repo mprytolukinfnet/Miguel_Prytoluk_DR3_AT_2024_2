@@ -228,7 +228,7 @@ print(response.json())
 ### Resumo da partida
 - **Gere um resumo da partida.**
 - O Bayer Leverkusen venceu o Augsburg por 1 a 0. O destaque da partida foi o gol de Exequiel Alejandro Palacios aos 93 minutos, assistido por Alejandro Grimaldo García. O Augsburg teve dois jogadores amarelados: Ruben Vargas e Iago Amaral Borduchi, ambos no primeiro tempo. Além disso, ocorreram várias substituições no segundo tempo, incluindo a entrada de Adam Hložek no lugar de Florian Wirtz pelo Bayer Leverkusen e a troca de Ruben Vargas por Arne Maier pelo Augsburg.
-## Narrativa da partida
+### Narrativa da partida
 - **Crie uma narrativa da partida em estilo humorístico**
 - Era uma vez, no reino do futebol alemão, uma partida entre Augsburg e Bayer Leverkusen que prometia ser mais emocionante do que uma montanha-russa em um parque de diversões!
 
